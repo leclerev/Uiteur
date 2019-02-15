@@ -3,6 +3,8 @@ package com.structit.apiclient;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 
 import android.os.Build;
@@ -18,25 +20,26 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.structit.apiclient.service.ApiService;
+import com.structit.apiclient.service.UserLoginTask;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String LOG_TAG = LoginActivity.class.getSimpleName();
 
-    public UserLoginTask mAuthTask = null;
-
     private AutoCompleteTextView mEmailView;
-    public EditText mPasswordView;
-    public View mProgressView;
+    private EditText mPasswordView;
+    private View mProgressView;
     private View mLoginFormView;
-
-    public String mId;
-    public String mURL;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Log.i(LOG_TAG, "Creating...");
+
         setContentView(R.layout.activity_login);
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
@@ -63,9 +66,14 @@ public class LoginActivity extends AppCompatActivity {
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+    }
 
-        mId = "Unknown";
-        mURL = "Unknown";
+    @Override
+    protected void onStart() {
+        Log.i(LOG_TAG, "Starting...");
+
+        super.onStart();
+
     }
 
     /**
@@ -74,9 +82,7 @@ public class LoginActivity extends AppCompatActivity {
      * errors are presented and no actual login attempt is made.
      */
     private void attemptLogin() {
-        if (mAuthTask != null) {
-            return;
-        }
+        Log.i(LOG_TAG, "Attempting to log in...");
 
         // Reset errors.
         mEmailView.setError(null);
@@ -115,8 +121,15 @@ public class LoginActivity extends AppCompatActivity {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(this, email, password);
-            mAuthTask.execute(email, password);
+
+            Intent intent = new Intent(this, ApiService.class);
+            intent.putExtra("name", email);
+            intent.putExtra("pwd", password);
+            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
         }
     }
 
@@ -131,7 +144,7 @@ public class LoginActivity extends AppCompatActivity {
     /**
      * Shows the progress UI and hides the login form.
      */
-    public void showProgress(final boolean show) {
+    private void showProgress(final boolean show) {
         // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
         // for very easy animations. If available, use these APIs to fade-in
         // the progress spinner.
@@ -160,25 +173,6 @@ public class LoginActivity extends AppCompatActivity {
             // and hide the relevant UI components.
             mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             mLoginFormView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
-    }
-
-    public void readXmlDoc(Document doc) {
-        try {
-            if(doc != null) {
-                doc.getDocumentElement().normalize();
-                Element root = doc.getDocumentElement();
-                this.mId = root.getAttribute("id");
-                this.mURL = root.getAttribute("url");
-            } // Else do nothing : default value are used for test purpose
-
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.putExtra("id", this.mId);
-            intent.putExtra("url", this.mURL);
-            startActivity(intent);
-
-        } catch (Exception ex) {
-            Log.e(LOG_TAG, "XML bad format received");
         }
     }
 }
