@@ -15,4 +15,6 @@ public class PlayData implements BaseColumns {
     public static final int NUM_COLUMN_RECORD = 3;
     public static final String COLUMN_URL = "url";
     public static final int NUM_COLUMN_URL = 4;
+    public static final String COLUMN_FILE = "file";
+    public static final int NUM_COLUMN_FILE = 5;
 }

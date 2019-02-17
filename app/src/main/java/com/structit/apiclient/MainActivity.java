@@ -1,6 +1,9 @@
 package com.structit.apiclient;
 
 import android.content.Intent;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,17 +17,18 @@ import com.structit.apiclient.data.PlayItem;
 import com.structit.apiclient.data.access.DataHandler;
 import com.structit.apiclient.service.ApiService;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private DataHandler mDataHandler;
+    private MediaPlayer mMediaPlayer;
 
-    private static String mPlayListName;
-    private String mPlayListNameReceived;
-    private static int mPlayListId;
-    private int mPlayListIdReceived;
+
+    private String mPlayListName;
+    private static int mPlayListId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,9 +49,11 @@ public class MainActivity extends AppCompatActivity {
         textviewApiUrl.setText(url);
 
         mDataHandler = new DataHandler(this);
+        mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
-        mPlayListNameReceived = intent.getStringExtra("playlist");
-        mPlayListIdReceived = intent.getIntExtra("playlistid", 0);
+        mPlayListName = intent.getStringExtra("playlist");
+        mPlayListId = intent.getIntExtra("playlistid", -1);
     }
 
     @Override
@@ -56,8 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
         super.onStart();
 
-        if(mPlayListName == mPlayListNameReceived &&
-                mPlayListId == mPlayListIdReceived) {
+        if(mPlayListId > -1) {
             mDataHandler.open();
             ArrayList<PlayItem> playList = mDataHandler.getPlayList();
             mDataHandler.close();
@@ -85,6 +90,9 @@ public class MainActivity extends AppCompatActivity {
                     TextView playRecordTextView =
                             (TextView) playItemLayout.findViewById(R.id.playRecord);
                     playRecordTextView.setText(item.getRecord());
+
+                    PlayOnClickListener listener = new PlayOnClickListener(this, item.getId());
+                    playListLayout.setOnClickListener(listener);
                 }
             } // Else do nothing
         } else {
@@ -103,5 +111,25 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, ApiService.class);
         stopService(intent);
+    }
+
+    public void play(int playId) {
+        this.mDataHandler.open();
+        String filename = this.mDataHandler.getPlayFile(playId);
+        this.mDataHandler.close();
+
+        if(filename.length() > 0) {
+            try {
+                File file = new File(getFilesDir(), filename);
+                this.mMediaPlayer.setDataSource(getApplicationContext(),
+                        Uri.fromFile(file));
+                this.mMediaPlayer.prepare();
+                this.mMediaPlayer.start();
+            } catch (Exception ex) {
+                Log.e(LOG_TAG, "Unable to play sound");
+            }
+        } else {
+            Log.d(LOG_TAG, "No file found for play: " + playId);
+        }
     }
 }

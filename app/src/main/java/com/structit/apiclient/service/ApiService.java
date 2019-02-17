@@ -127,7 +127,6 @@ public class ApiService extends Service {
     public void notifyData(Boolean success, Document doc) {
         try {
             if(doc != null) {
-                mDataHandler.open();
                 doc.getDocumentElement().normalize();
                 Element root = doc.getDocumentElement();
                 String playListName = root.getAttribute("name");
@@ -137,16 +136,23 @@ public class ApiService extends Service {
                 for(int i=0; i < nodePlayList.getLength(); i++) {
                     if (nodePlayList.item(i).getNodeType() == Node.ELEMENT_NODE) {
                         Element playElement = (Element) nodePlayList.item(i);
+                        int fileId = Integer.parseInt(playElement.getAttribute("id"));
+                        String fileUrl = playElement.getAttribute("url");
+                        mDataHandler.open();
                         PlayItem playItem = new PlayItem(
-                                Integer.parseInt(playElement.getAttribute("id")),
+                                fileId,
                                 playElement.getAttribute("name"),
                                 playElement.getAttribute("author"),
                                 playElement.getAttribute("record"),
-                                playElement.getAttribute("url"));
+                                fileUrl,
+                                "");
                         mDataHandler.addPlayItem(playItem);
+                        mDataHandler.close();
+
+                        GetFileTask fileTask = new GetFileTask(this, playItem);
+                        fileTask.execute(this.mURL + fileUrl, "" + playListId);
                     } // Else do nothing
                 }
-                mDataHandler.close();
 
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("id", this.mId);
@@ -170,6 +176,16 @@ public class ApiService extends Service {
             }
         } catch (Exception ex) {
             Log.e(LOG_TAG, "XML bad format received");
+        }
+    }
+
+    public void notifyFile(Boolean success, PlayItem item) {
+        if(success) {
+            mDataHandler.open();
+            mDataHandler.addPlayItem(item);
+            mDataHandler.close();
+        } else {
+            Log.w(LOG_TAG, "Unable to create file: " + item.getFile());
         }
     }
 }

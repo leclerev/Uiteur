@@ -6,18 +6,16 @@ public class PlayItem {
     private String mAuthor;
     private String mRecord;
     private String mURL;
-
-    public PlayItem() {
-
-    }
+    private String mFile;
 
     public PlayItem(int id, String name, String author,
-                    String record, String url) {
+                    String record, String url, String file) {
         this.mId = id;
         this.mName = name;
         this.mAuthor = author;
         this.mRecord = record;
         this.mURL = url;
+        this.mFile = file;
     }
 
     public int getId() {
@@ -40,9 +38,11 @@ public class PlayItem {
         return this.mURL;
     }
 
-    public void setId(long id) {
-        Long identifier = new Long(id);
-        this.mId = identifier.intValue();
+    public String getFile() {
+        return this.mFile;
     }
 
+    public void setFile(String file) {
+        this.mFile = file;
+    }
 }

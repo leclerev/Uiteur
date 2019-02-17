@@ -1,30 +1,28 @@
 package com.structit.apiclient.service;
 
+import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
+
 import android.webkit.CookieManager;
 
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
+import com.structit.apiclient.data.PlayItem;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-public class GetDataTask extends AsyncTask<String, Void, Boolean> {
-    private static final String LOG_TAG = GetDataTask.class.getSimpleName();
+public class GetFileTask extends AsyncTask<String, Void, Boolean> {
+    private static final String LOG_TAG = GetFileTask.class.getSimpleName();
 
     private ApiService mService;
-    private Document mDocument;
+    private PlayItem mItem;
 
-    GetDataTask(ApiService service) {
+    GetFileTask(ApiService service, PlayItem item) {
         mService = service;
-        mDocument = null;
+        mItem = item;
     }
 
     @Override
@@ -37,6 +35,10 @@ public class GetDataTask extends AsyncTask<String, Void, Boolean> {
             int nbAttempt = 0;
             do {
                 URL serviceURL = new URL(params[0]);
+                String filename = params[1] + "_" + mItem.getId();
+
+                Log.d(LOG_TAG, "Filename: " + filename);
+
                 connection = (HttpURLConnection) serviceURL.openConnection();
 
                 connection.setRequestMethod("GET");
@@ -55,23 +57,16 @@ public class GetDataTask extends AsyncTask<String, Void, Boolean> {
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     Log.i(LOG_TAG, "Connection granted...");
 
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(
-                            connection.getInputStream()));
-                    StringBuffer buffer = new StringBuffer();
-                    String inputLine;
-                    while ((inputLine = reader.readLine()) != null) {
-                        buffer.append(inputLine);
+                    DataInputStream reader = new DataInputStream(connection.getInputStream());
+                    FileOutputStream writer = this.mService.openFileOutput(filename, Context.MODE_PRIVATE);
+                    byte[] buffer = new byte[1024];
+                    while (reader.read(buffer) > 0) {
+                        writer.write(buffer);
                     }
                     reader.close();
+                    writer.close();
 
-                    Log.d(LOG_TAG, "Answer: " + buffer.toString());
-
-                    DocumentBuilderFactory builderFactory = DocumentBuilderFactory
-                            .newInstance();
-                    DocumentBuilder documentBuilder = builderFactory.newDocumentBuilder();
-                    InputSource inputSource = new InputSource(new StringReader(buffer.toString()));
-
-                    mDocument = documentBuilder.parse(inputSource);
+                    mItem.setFile(filename);
                 } else {
                     if (connection.getResponseMessage() != null) {
                         Log.e(LOG_TAG, "Connection error: " + connection.getResponseMessage());
@@ -81,7 +76,7 @@ public class GetDataTask extends AsyncTask<String, Void, Boolean> {
                 }
 
                 nbAttempt++;
-            } while(this.mDocument == null && nbAttempt < 3);
+            } while(mItem.getFile().length() == 0 && nbAttempt < 3);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -90,11 +85,11 @@ public class GetDataTask extends AsyncTask<String, Void, Boolean> {
             } // Else do nothing
         }
 
-        return this.mDocument != null;
+        return mItem.getFile().length() > 0;
     }
 
     @Override
     protected void onPostExecute(final Boolean success) {
-        this.mService.notifyData(success, this.mDocument);
+        this.mService.notifyFile(success, mItem);
     }
 }

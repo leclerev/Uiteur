@@ -20,6 +20,8 @@ public class DataHelper extends SQLiteOpenHelper {
             + PlayData.COLUMN_RECORD
             + " TEXT NOT NULL, "
             + PlayData.COLUMN_URL
+            + " TEXT NOT NULL, "
+            + PlayData.COLUMN_FILE
             + " TEXT NOT NULL "
             + ")";
 

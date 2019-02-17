@@ -34,6 +34,7 @@ public class DataHandler {
         values.put(PlayData.COLUMN_AUTHOR, item.getAuthor());
         values.put(PlayData.COLUMN_RECORD, item.getRecord());
         values.put(PlayData.COLUMN_URL, item.getUrl());
+        values.put(PlayData.COLUMN_FILE, item.getFile());
 
         Cursor cursor = mDatabase.rawQuery("SELECT * FROM " + PlayData.TABLE
                 + " WHERE "
@@ -61,12 +62,27 @@ public class DataHandler {
                         cursor.getString(PlayData.NUM_COLUMN_NAME),
                         cursor.getString(PlayData.NUM_COLUMN_AUTHOR),
                         cursor.getString(PlayData.NUM_COLUMN_RECORD),
-                        cursor.getString(PlayData.NUM_COLUMN_URL));
+                        cursor.getString(PlayData.NUM_COLUMN_URL),
+                        cursor.getString(PlayData.NUM_COLUMN_FILE));
                 list.add(playItem);
             } while (cursor.moveToNext());
         } // Else do nothing
 
         return list;
+    }
+
+    public String getPlayFile(int playId) {
+        Cursor cursor = mDatabase.rawQuery("SELECT * FROM " + PlayData.TABLE
+                + " WHERE "
+                + PlayData.COLUMN_ID
+                + "="
+                + playId, null);
+
+        if(cursor.moveToFirst()) {
+            return cursor.getString(PlayData.NUM_COLUMN_FILE);
+        } else {
+            return "";
+        }
     }
 
     public void drop() {
