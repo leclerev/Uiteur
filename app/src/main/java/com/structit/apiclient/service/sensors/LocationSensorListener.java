@@ -12,7 +12,11 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+
+import com.structit.apiclient.MainActivity;
+import com.structit.apiclient.service.MyBroadcastReceiver;
 
 public class LocationSensorListener extends Service implements LocationListener, SensorEventListener {
     private static final String LOG_TAG = LocationSensorListener.class.getSimpleName();
@@ -67,23 +71,17 @@ public class LocationSensorListener extends Service implements LocationListener,
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            float x, y, z;
-            float gravity[] = new float[]{0, 0, 0};
-            final float alpha = 0.8f;
+        if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            if (event.values[2] != 0) {
+                Log.i(LOG_TAG, "onSensorChanged: GyroX: " + event.values[0]);
+                Log.i(LOG_TAG, "onSensorChanged: GyroY: " + event.values[1]);
+                Log.i(LOG_TAG, "onSensorChanged: GyroZ: " + event.values[2]);
+                Log.i(LOG_TAG, "onSensorChanged: ---------------------------------------------------");
 
-            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
-
-            x = event.values[0] - gravity[0];
-            y = event.values[1] - gravity[1];
-            z = event.values[2] - gravity[2];
-
-            /*Log.i(LOG_TAG, "onSensorChanged: GyroX: " + x);
-            Log.i(LOG_TAG, "onSensorChanged: GyroY: " + y);
-            Log.i(LOG_TAG, "onSensorChanged: GyroZ: " + z);
-            Log.i(LOG_TAG, "onSensorChanged: ---------------------------------------------------");*/
+                /*Intent mainActivityIntent = new Intent(ACTION_LOCATION);
+                mainActivityIntent.putExtra("gyroZ", event.values[2] > 0 ? 10 : -10);
+                LocalBroadcastManager.getInstance(this).sendBroadcast(mainActivityIntent);*/
+            }
         }
     }
 

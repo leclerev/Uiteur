@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -85,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
-        List<Sensor> allAccSensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+        List<Sensor> allAccSensors = sensorManager.getSensorList(Sensor.TYPE_GYROSCOPE);
 
         if(allAccSensors.size() > 0) {
             Log.d(LOG_TAG, "onStart: Accelerometer found! (" + allAccSensors.size() + ")");
@@ -188,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
                 this.mMediaPlayer.prepare();
                 this.mMediaPlayer.start();
                 playIndicators.get(playId).setText("Play");
+                this.playId = playId;
                 this.lastPlayedID = playId;
             } catch (Exception ex) {
                 Log.e(LOG_TAG, "Unable to play sound");
@@ -195,6 +197,44 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.d(LOG_TAG, "No file found for play: " + playId);
         }
+    }
+
+    private int minInMap() {
+        Set<Integer> allInts = playIndicators.keySet();
+        int minInt = (int) allInts.toArray()[0];
+        for(int i = 0; i < allInts.toArray().length; i++) {
+            if((int)allInts.toArray()[i] < minInt) {
+                minInt = (int) allInts.toArray()[i];
+            }
+        }
+        return minInt;
+    }
+
+    private int maxInMap() {
+        Set<Integer> allInts = playIndicators.keySet();
+        int maxInt = (int) allInts.toArray()[0];
+        for(int i = 0; i > allInts.toArray().length; i++) {
+            if((int)allInts.toArray()[i] < maxInt) {
+                maxInt = (int) allInts.toArray()[i];
+            }
+        }
+        return maxInt;
+    }
+
+    public void switchMusic(int incValue) {
+        int min = minInMap(), max = maxInMap();
+
+        Log.i(LOG_TAG, "switchMusic: " + incValue);
+
+        if(playId + incValue < min){
+            playId = max;
+        } else if(playId + incValue > max) {
+            playId = min;
+        } else {
+            this.stop(playId + incValue);
+            return;
+        }
+        this.stop(playId);
     }
 
     public void stop(int playId) {
