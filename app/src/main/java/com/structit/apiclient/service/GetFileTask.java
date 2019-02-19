@@ -60,10 +60,12 @@ public class GetFileTask extends AsyncTask<String, Void, Boolean> {
                     DataInputStream reader = new DataInputStream(connection.getInputStream());
                     FileOutputStream writer = this.mService.openFileOutput(filename, Context.MODE_PRIVATE);
                     byte[] buffer = new byte[1024];
-                    while (reader.read(buffer) > 0) {
-                        writer.write(buffer);
+                    int count;
+                    while ((count = reader.read(buffer)) > 0) {
+                        writer.write(buffer, 0, count);
                     }
                     reader.close();
+                    writer.flush();
                     writer.close();
 
                     mItem.setFile(filename);
