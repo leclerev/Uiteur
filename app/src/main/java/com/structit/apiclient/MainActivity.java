@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String mPlayListName;
     private static int mPlayListId = -1;
-    private int lastPlayedID = 0;
+    private int lastPlayedID = 10;
 
     private Map<Integer, TextView> playIndicators = new HashMap<>();
 
@@ -131,6 +131,8 @@ public class MainActivity extends AppCompatActivity {
                     PlayOnClickListener listener = new PlayOnClickListener(this, item.getId());
                     Log.i(LOG_TAG, "onStart: ItemID: " + item.getId());
                     playItemLayout.setOnClickListener(listener);
+
+                    musicIntent = new Intent(this, MusicService.class);
                 }
 
                 LinearLayout buttons = (LinearLayout) findViewById(R.id.id_control_buttons);
@@ -143,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                         playId = lastPlayedID;
                         musicIntent.putExtra("playId", playId);
                         startService(musicIntent);
-                        finish();
+                        //finish();
                     }
                 });
 
@@ -151,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View view) {
                         stopService(musicIntent);
-                        finish();
                     }
                 });
             } // Else do nothing
