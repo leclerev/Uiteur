@@ -16,6 +16,6 @@ public class PlayOnClickListener implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
-        this.mActivity.play(this.mPlayId);
+        //this.mActivity.play(this.mPlayId);
     }
 }

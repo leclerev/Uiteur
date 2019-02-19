@@ -9,6 +9,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -16,11 +18,12 @@ import android.widget.TextView;
 import com.structit.apiclient.data.PlayItem;
 import com.structit.apiclient.data.access.DataHandler;
 import com.structit.apiclient.service.ApiService;
+import com.structit.apiclient.service.MusicService;
 
 import java.io.File;
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private DataHandler mDataHandler;
@@ -29,6 +32,12 @@ public class MainActivity extends AppCompatActivity {
 
     private String mPlayListName;
     private static int mPlayListId = -1;
+    private int lastPlayedID = 10;
+
+    public Button mPlayButton = null;
+    public Button mStopButton = null;
+    public Intent musicIntent;
+    private int playId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,8 +101,36 @@ public class MainActivity extends AppCompatActivity {
                     playRecordTextView.setText(item.getRecord());
 
                     PlayOnClickListener listener = new PlayOnClickListener(this, item.getId());
-                    playListLayout.setOnClickListener(listener);
+                    playItemLayout.setOnClickListener(listener);
+
+                    //mPlayButton.setOnClickListener(this );
+                    //mStopButton.setOnClickListener(this );
+
+                    musicIntent = new Intent(this, MusicService.class);
+
                 }
+
+                LinearLayout buttons = (LinearLayout) findViewById(R.id.id_control_buttons);
+                mPlayButton= (Button) buttons.findViewById(R.id.id_play_button);
+                mStopButton = (Button) buttons.findViewById(R.id.id_stop_button);
+
+                mPlayButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        playId = lastPlayedID;
+                        musicIntent.putExtra("playId", playId);
+                        startService(musicIntent);
+                        finish();
+                    }
+                });
+
+                mStopButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        stopService(musicIntent);
+                        finish();
+                    }
+                });
             } // Else do nothing
         } else {
             Intent intent = new Intent(this, ApiService.class);
@@ -113,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
         stopService(intent);
     }
 
-    public void play(int playId) {
+    /*public void play(int playId) {
         this.mDataHandler.open();
         String filename = this.mDataHandler.getPlayFile(playId);
         this.mDataHandler.close();
@@ -131,5 +168,23 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Log.d(LOG_TAG, "No file found for play: " + playId);
         }
+    }*/
+
+    @Override
+    public void onClick(View view ) {
+        Log.i(LOG_TAG, "itrm id =" + playId );
+
+
+
+
+     /*   if (view == mPlayButton)
+        {
+            startService(musicIntent);
+            finish();
+        } else if (view  == mStopButton) {
+            stopService(musicIntent);
+            finish();
+        }*/
+
     }
 }

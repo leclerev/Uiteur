@@ -21,6 +21,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+
 public class ApiService extends Service {
     private static final String LOG_TAG = ApiService.class.getSimpleName();
 
@@ -104,11 +106,13 @@ public class ApiService extends Service {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("id", this.mId);
                 intent.putExtra("url", this.mURL);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             } else if(!success) {
                 mState = SERVICE_STATE.NOT_LOGGED_IN;
 
                 Intent intent = new Intent(this, LoginActivity.class);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             } else {
                 // Default values are used for test purpose
@@ -117,10 +121,11 @@ public class ApiService extends Service {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.putExtra("id", this.mId);
                 intent.putExtra("url", this.mURL);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             }
         } catch (Exception ex) {
-            Log.e(LOG_TAG, "XML bad format received");
+            Log.e(LOG_TAG, "XML bad format received: " + ex.getMessage());
         }
     }
 
@@ -138,6 +143,9 @@ public class ApiService extends Service {
                         Element playElement = (Element) nodePlayList.item(i);
                         int fileId = Integer.parseInt(playElement.getAttribute("id"));
                         String fileUrl = playElement.getAttribute("url");
+                        if (mDataHandler == null) {
+                            this.mDataHandler = new DataHandler(this);
+                        }
                         mDataHandler.open();
                         PlayItem playItem = new PlayItem(
                                 fileId,
@@ -159,11 +167,13 @@ public class ApiService extends Service {
                 intent.putExtra("url", this.mURL);
                 intent.putExtra("playlist", playListName);
                 intent.putExtra("playlistid", playListId);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             } else if(!success) {
                 mState = SERVICE_STATE.NOT_LOGGED_IN;
 
                 Intent intent = new Intent(this, LoginActivity.class);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             } else {
                 // Default values are used for test purpose
@@ -172,10 +182,11 @@ public class ApiService extends Service {
                 intent.putExtra("url", this.mURL);
                 intent.putExtra("playlist", "Unknown");
                 intent.putExtra("playlistid", 0);
+                intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             }
         } catch (Exception ex) {
-            Log.e(LOG_TAG, "XML bad format received");
+            Log.e(LOG_TAG, "XML bad format received: " +ex.getMessage() );
         }
     }
 
