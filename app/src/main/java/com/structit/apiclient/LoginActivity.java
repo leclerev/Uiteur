@@ -5,6 +5,9 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
@@ -32,6 +35,7 @@ import java.security.Permission;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String LOG_TAG = LoginActivity.class.getSimpleName();
+    private static final int PERMISSIONS_REQUEST_CODE = 101;
 
     private static final int PERMISSION_REQUEST_CODE = 101;
 
@@ -39,6 +43,8 @@ public class LoginActivity extends AppCompatActivity {
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
+    Boolean permissionGranded = false ;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +94,47 @@ public class LoginActivity extends AppCompatActivity {
                 PERMISSION_REQUEST_CODE);
 
         super.onStart();
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_REQUEST_CODE:
+                if (grantResults.length == 5) {
+                    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                        // FOREGROUND_SERVICE only available from API 28.
+                        Log.d(LOG_TAG, "Overriding FOREGROUND_SERVICE permission");
+                        grantResults[2] = PackageManager.PERMISSION_GRANTED;
+                    }
+
+                    if(grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                            grantResults[1] == PackageManager.PERMISSION_GRANTED &&
+                            grantResults[2] == PackageManager.PERMISSION_GRANTED &&
+                            grantResults[3] == PackageManager.PERMISSION_GRANTED) {
+                        Log.i(LOG_TAG, "Authorizations granted");
+                        permissionGranded = true;
+
+                    } else if(grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                        Log.e(LOG_TAG, "ACCESS_FINE_LOCATION not granted");
+                    } else if(grantResults[1] != PackageManager.PERMISSION_GRANTED) {
+                        Log.e(LOG_TAG, "WAKE_LOCK  not granted");
+                    } else if(grantResults[2] != PackageManager.PERMISSION_GRANTED) {
+                        Log.e(LOG_TAG, "INTERNET not granted");
+                    } else if(grantResults[3] != PackageManager.PERMISSION_GRANTED) {
+                        Log.e(LOG_TAG, "ACCESS_NETWORK_STATE not granted");
+                    } else  {
+                        Log.e(LOG_TAG, "Unknown authorization not granted");
+                    }
+                } else {
+                    Log.e(LOG_TAG, "Bad response format to authorization request");
+                }
+                break;
+
+            default:
+                Log.e(LOG_TAG, "Authorization request not answered");
+                break;
+        }
     }
 
     /**
@@ -97,53 +144,58 @@ public class LoginActivity extends AppCompatActivity {
      */
     private void attemptLogin() {
         Log.i(LOG_TAG, "Attempting to log in...");
+        if (permissionGranded = true) {
+            // Reset errors.
 
-        // Reset errors.
-        mEmailView.setError(null);
-        mPasswordView.setError(null);
+            mEmailView.setError(null);
+            mPasswordView.setError(null);
 
-        // Store values at the time of the login attempt.
-        String email = mEmailView.getText().toString();
-        String password = mPasswordView.getText().toString();
+            // Store values at the time of the login attempt.
+            String email = mEmailView.getText().toString();
+            String password = mPasswordView.getText().toString();
 
-        boolean cancel = false;
-        View focusView = null;
+            boolean cancel = false;
+            View focusView = null;
 
-        // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
-            mPasswordView.setError(getString(R.string.error_invalid_password));
-            focusView = mPasswordView;
-            cancel = true;
-        }
-
-        // Check for a valid email address.
-        if (TextUtils.isEmpty(email)) {
-            mEmailView.setError(getString(R.string.error_field_required));
-            focusView = mEmailView;
-            cancel = true;
-        } else if (!isEmailValid(email)) {
-            mEmailView.setError(getString(R.string.error_invalid_email));
-            focusView = mEmailView;
-            cancel = true;
-        }
-
-        if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
-            focusView.requestFocus();
-        } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
-            showProgress(true);
-
-            Intent intent = new Intent(this, ApiService.class);
-            intent.putExtra("name", email);
-            intent.putExtra("pwd", password);
-            if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
-                startService(intent);
+            // Check for a valid password, if the user entered one.
+            if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+                mPasswordView.setError(getString(R.string.error_invalid_password));
+                focusView = mPasswordView;
+                cancel = true;
             }
+
+            // Check for a valid email address.
+            if (TextUtils.isEmpty(email)) {
+                mEmailView.setError(getString(R.string.error_field_required));
+                focusView = mEmailView;
+                cancel = true;
+            } else if (!isEmailValid(email)) {
+                mEmailView.setError(getString(R.string.error_invalid_email));
+                focusView = mEmailView;
+                cancel = true;
+            }
+
+            if (cancel) {
+                // There was an error; don't attempt login and focus the first
+                // form field with an error.
+                focusView.requestFocus();
+            } else {
+                // Show a progress spinner, and kick off a background task to
+                // perform the user login attempt.
+                showProgress(true);
+
+                Intent intent = new Intent(this, ApiService.class);
+                intent.putExtra("name", email);
+                intent.putExtra("pwd", password);
+                if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent);
+                } else {
+                    startService(intent);
+                }
+            }
+        }
+        else{
+            Log.e(LOG_TAG, "Permission not allowed");
         }
     }
 

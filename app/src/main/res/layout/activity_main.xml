@@ -23,4 +23,25 @@
         android:orientation="vertical">
 
     </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/id_control_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/id_play_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="bouton Play" />
+
+        <Button
+            android:id="@+id/id_stop_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Bouton Stop" />
+
+    </LinearLayout>
+
 </LinearLayout>
