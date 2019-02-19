@@ -1,9 +1,11 @@
 package com.structit.apiclient;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 
@@ -26,8 +28,12 @@ import com.structit.apiclient.service.UserLoginTask;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.security.Permission;
+
 public class LoginActivity extends AppCompatActivity {
     private static final String LOG_TAG = LoginActivity.class.getSimpleName();
+
+    private static final int PERMISSION_REQUEST_CODE = 101;
 
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
@@ -72,8 +78,16 @@ public class LoginActivity extends AppCompatActivity {
     protected void onStart() {
         Log.i(LOG_TAG, "Starting...");
 
-        super.onStart();
+        ActivityCompat.requestPermissions(this,
+                new String[]{
+                        Manifest.permission.INTERNET,
+                        Manifest.permission.ACCESS_NETWORK_STATE,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.WAKE_LOCK
+                },
+                PERMISSION_REQUEST_CODE);
 
+        super.onStart();
     }
 
     /**

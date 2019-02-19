@@ -1,6 +1,9 @@
 package com.structit.apiclient;
 
+import android.content.Context;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -16,19 +19,28 @@ import android.widget.TextView;
 import com.structit.apiclient.data.PlayItem;
 import com.structit.apiclient.data.access.DataHandler;
 import com.structit.apiclient.service.ApiService;
+import com.structit.apiclient.service.sensors.LocationSensorListener;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private DataHandler mDataHandler;
-    private MediaPlayer mMediaPlayer;
+    public MediaPlayer mMediaPlayer;
 
 
     private String mPlayListName;
     private static int mPlayListId = -1;
+    private int lastPlayedID = 0;
+
+    private Map<Integer, TextView> playIndicators = new HashMap<>();
+
+    private SensorManager sensorManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +71,21 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         Log.i(LOG_TAG, "Starting...");
+
+        Intent locationService = new Intent(this, LocationSensorListener.class);
+        startService(locationService);
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+        List<Sensor> allAccSensors = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+
+        if(allAccSensors.size() > 0) {
+            Log.d(LOG_TAG, "onStart: Accelerometer found! (" + allAccSensors.size() + ")");
+        } else {
+            Log.d(LOG_TAG, "onStart: Accelerometer not found!");
+        }
+
+        sensorManager.registerListener(new LocationSensorListener(), allAccSensors.get(0), 1000000);
 
         super.onStart();
 
@@ -91,8 +118,11 @@ public class MainActivity extends AppCompatActivity {
                             (TextView) playItemLayout.findViewById(R.id.playRecord);
                     playRecordTextView.setText(item.getRecord());
 
+                    playIndicators.put(item.getId(), (TextView) playItemLayout.findViewById(R.id.isPlayed));
+
                     PlayOnClickListener listener = new PlayOnClickListener(this, item.getId());
-                    playListLayout.setOnClickListener(listener);
+                    Log.i(LOG_TAG, "onStart: ItemID: " + item.getId());
+                    playItemLayout.setOnClickListener(listener);
                 }
             } // Else do nothing
         } else {
@@ -121,15 +151,30 @@ public class MainActivity extends AppCompatActivity {
         if(filename.length() > 0) {
             try {
                 File file = new File(getFilesDir(), filename);
+
                 this.mMediaPlayer.setDataSource(getApplicationContext(),
                         Uri.fromFile(file));
                 this.mMediaPlayer.prepare();
                 this.mMediaPlayer.start();
+                playIndicators.get(playId).setText("Play");
+                this.lastPlayedID = playId;
             } catch (Exception ex) {
                 Log.e(LOG_TAG, "Unable to play sound");
             }
         } else {
             Log.d(LOG_TAG, "No file found for play: " + playId);
         }
+    }
+
+    public void stop(int playId) {
+        if(this.mMediaPlayer.isPlaying()) {
+            this.mMediaPlayer.stop();
+            this.mMediaPlayer.reset();
+
+            playIndicators.get(lastPlayedID).setText("Pause");
+        }
+
+        if(playId != this.lastPlayedID)
+            this.play(playId);
     }
 }

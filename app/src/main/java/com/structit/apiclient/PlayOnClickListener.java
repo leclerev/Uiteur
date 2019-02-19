@@ -16,6 +16,9 @@ public class PlayOnClickListener implements View.OnClickListener {
 
     @Override
     public void onClick(View view) {
-        this.mActivity.play(this.mPlayId);
+        if(this.mActivity.mMediaPlayer.isPlaying())
+            this.mActivity.stop(this.mPlayId);
+        else
+            this.mActivity.play(this.mPlayId);
     }
 }
