@@ -2,12 +2,14 @@ package com.structit.apiclient;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -21,6 +23,8 @@ import android.widget.TextView;
 import com.structit.apiclient.data.PlayItem;
 import com.structit.apiclient.data.access.DataHandler;
 import com.structit.apiclient.service.ApiService;
+import com.structit.apiclient.service.MyBroadcastReceiver;
+import com.structit.apiclient.service.SensorService;
 import com.structit.apiclient.service.sensors.LocationSensorListener;
 import com.structit.apiclient.service.MusicService;
 
@@ -44,9 +48,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Map<Integer, TextView> playIndicators = new HashMap<>();
 
-    private SensorManager sensorManager;
+    //private SensorManager sensorManager;
 
-    public Button mPlayButton = null;
+    //public Button mPlayButton = null;
     public Button mStopButton = null;
     public Intent musicIntent;
     private int playId;
@@ -81,10 +85,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         Log.i(LOG_TAG, "Starting...");
 
-        Intent locationService = new Intent(this, LocationSensorListener.class);
+
+        Intent locationService = new Intent(this, SensorService.class);
         startService(locationService);
 
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        LocalBroadcastManager.getInstance(this).registerReceiver(new MyBroadcastReceiver(this), new IntentFilter(SensorService.ACTION_LOCATION));
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(new MyBroadcastReceiver(this), new IntentFilter(SensorService.ACTION_LOCALISATION));
+        Log.i(LOG_TAG, "localBroadcastManager initialisés...");
+        //mis dans SensorService
+        /*sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         List<Sensor> allAccSensors = sensorManager.getSensorList(Sensor.TYPE_GYROSCOPE);
 
@@ -92,9 +102,9 @@ public class MainActivity extends AppCompatActivity {
             Log.d(LOG_TAG, "onStart: Accelerometer found! (" + allAccSensors.size() + ")");
         } else {
             Log.d(LOG_TAG, "onStart: Accelerometer not found!");
-        }
+        }*/
 
-        sensorManager.registerListener(new LocationSensorListener(), allAccSensors.get(0), 1000000);
+      //  sensorManager.registerListener(new LocationSensorListener(), allAccSensors.get(0), 1000000);
 
         super.onStart();
 
@@ -133,14 +143,14 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(LOG_TAG, "onStart: ItemID: " + item.getId());
                     playItemLayout.setOnClickListener(listener);
 
-                    musicIntent = new Intent(this, MusicService.class);
+                    //musicIntent = new Intent(this, MusicService.class);
                 }
 
                 LinearLayout buttons = (LinearLayout) findViewById(R.id.id_control_buttons);
-                mPlayButton= (Button) buttons.findViewById(R.id.id_play_button);
+               // mPlayButton= (Button) buttons.findViewById(R.id.id_play_button);
                 mStopButton = (Button) buttons.findViewById(R.id.id_stop_button);
 
-                mPlayButton.setOnClickListener(new View.OnClickListener() {
+               /* mPlayButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         playId = lastPlayedID;
@@ -148,12 +158,12 @@ public class MainActivity extends AppCompatActivity {
                         startService(musicIntent);
                         //finish();
                     }
-                });
+                });*/
 
                 mStopButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        stopService(musicIntent);
+                       // stopService(musicIntent);
                     }
                 });
             } // Else do nothing
@@ -171,8 +181,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        Intent intent = new Intent(this, ApiService.class);
-        stopService(intent);
+       // Intent intent = new Intent(this, ApiService.class);
+       // stopService(intent);
     }
 
     public void play(int playId) {
@@ -205,6 +215,7 @@ public class MainActivity extends AppCompatActivity {
         for(int i = 0; i < allInts.toArray().length; i++) {
             if((int)allInts.toArray()[i] < minInt) {
                 minInt = (int) allInts.toArray()[i];
+                Log.d(LOG_TAG, "minInt = " + minInt);
             }
         }
         return minInt;
@@ -216,6 +227,7 @@ public class MainActivity extends AppCompatActivity {
         for(int i = 0; i > allInts.toArray().length; i++) {
             if((int)allInts.toArray()[i] < maxInt) {
                 maxInt = (int) allInts.toArray()[i];
+                Log.d(LOG_TAG, "minInt = " + maxInt);
             }
         }
         return maxInt;
@@ -236,6 +248,15 @@ public class MainActivity extends AppCompatActivity {
         }
         this.stop(playId);
     }
+
+  public void musicPapeteries( double latitude, double longitude){
+        double latitude_papeteries = 45.907973;
+        double longitude_papeteries = 6.102794 ;
+        Log.i(LOG_TAG, " Localisation : LATITUDE =" + latitude + "LONGITUDE =" + longitude);
+        if ((latitude_papeteries == latitude) && (longitude_papeteries == longitude)){
+            Log.i(LOG_TAG, " Localisation : Papeteries " );
+        }
+  }
 
     public void stop(int playId) {
         if(this.mMediaPlayer.isPlaying()) {

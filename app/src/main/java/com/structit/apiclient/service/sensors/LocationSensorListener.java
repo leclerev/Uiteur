@@ -17,41 +17,26 @@ import android.util.Log;
 
 import com.structit.apiclient.MainActivity;
 import com.structit.apiclient.service.MyBroadcastReceiver;
+import com.structit.apiclient.service.SensorService;
 
-public class LocationSensorListener extends Service implements LocationListener, SensorEventListener {
+public class LocationSensorListener implements LocationListener, SensorEventListener {
+    private SensorService myService;
     private static final String LOG_TAG = LocationSensorListener.class.getSimpleName();
 
-    public static final String ACTION_LOCATION = "com.example.digital.androidlocation.LOCATION";
+    //public static final String ACTION_LOCATION = "com.example.digital.androidlocation.LOCATION";
 
-    /*private LocationService myLocationService;
-
-    public LocationSensorListener() {
-        myLocationService = null;
+    public LocationSensorListener( SensorService service) {
+        this.myService = service;
     }
 
-    public LocationSensorListener(LocationService locationService) {
-        myLocationService = locationService;
-    }*/
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        // Acquire a reference to the system Location Manager
-        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
-        // Register the listener with the Location Manager to receive location updates
-        try {
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, this);
-        } catch (SecurityException e) {
-            Log.e(LOG_TAG, "onStart: " + e.getMessage());
-        }
-
-        return START_STICKY;
-    }
 
     @Override
     public void onLocationChanged(Location location) {
         Log.i(LOG_TAG, "onLocationChanged: Actual location: " + location);
-        //this.myLocationService.notifyLocation(location);
+        Log.d("location", "provider "+location.getProvider());
+        Log.d("location", "latitude "+location.getLatitude());
+        Log.d("location", "longitude"+location.getLongitude());
+        this.myService .notifyLocation(location);
     }
 
     @Override
@@ -72,6 +57,7 @@ public class LocationSensorListener extends Service implements LocationListener,
     @Override
     public void onSensorChanged(SensorEvent event) {
         if(event.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            this.myService.notifySensor(event);
             if (event.values[2] != 0) {
                 Log.i(LOG_TAG, "onSensorChanged: GyroX: " + event.values[0]);
                 Log.i(LOG_TAG, "onSensorChanged: GyroY: " + event.values[1]);
@@ -90,9 +76,4 @@ public class LocationSensorListener extends Service implements LocationListener,
 
     }
 
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
 }

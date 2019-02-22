@@ -13,7 +13,7 @@ import com.structit.apiclient.data.access.DataHandler;
 import java.io.File;
 import java.io.IOException;
 
-public class MusicService extends Service  implements MediaPlayer.OnCompletionListener{
+public class MusicService extends Service {
     private MediaPlayer myMediaPlayer ;
     private DataHandler mDataHandler;
 
@@ -27,21 +27,15 @@ public class MusicService extends Service  implements MediaPlayer.OnCompletionLi
 
     @Override
     public void onCreate(){
-        //create services
         super.onCreate();
-
-        //create music player
-        myMediaPlayer = new MediaPlayer();
-        mDataHandler = new DataHandler(this);
-
-        //A modifier
-        //myMediaPlayer = MediaPlayer.create(this, R.raw.music2);
-        myMediaPlayer.setOnCompletionListener(this);
     }
 
     @Override
     public int onStartCommand( Intent intent, int flags, int startId){
-        //  MusicListener myMusicListener = new MusicListener(this);
+        //create music player
+        myMediaPlayer = new MediaPlayer();
+        mDataHandler = new DataHandler(this);
+
         /*if (!myMediaPlayer.isPlaying()) {
             try {
 
@@ -80,10 +74,6 @@ public class MusicService extends Service  implements MediaPlayer.OnCompletionLi
         myMediaPlayer.release();
     }
 
-    @Override
-    public void onCompletion(MediaPlayer mp) {
-        stopSelf();
-    }
 }
 
 
