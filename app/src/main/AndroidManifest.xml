@@ -20,15 +20,14 @@
             android:name=".MyBroadcastReceiver"
             android:enabled="true"
             android:exported="true"></receiver>
-
-        <service
-            android:name=".service.SensorService"
+        <receiver
+            android:name=".MusicBroadcastReceiver"
             android:enabled="true"
-            android:exported="true" />
-        <service
-            android:name=".service.MusicService"
+            android:exported="true"></receiver>
+        <receiver
+            android:name=".MainActivityReceiver"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true"></receiver>
 
         <activity android:name=".MainActivity" />
         <activity
@@ -42,7 +41,8 @@
         </activity>
 
         <service android:name=".service.ApiService" />
-        <service android:name=".service.sensors.LocationSensorListener" />
+        <service android:name=".service.SensorService" />
+        <service android:name=".service.MusicService" />
     </application>
 
 </manifest>

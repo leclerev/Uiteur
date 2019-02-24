@@ -23,6 +23,7 @@ import android.widget.TextView;
 import com.structit.apiclient.data.PlayItem;
 import com.structit.apiclient.data.access.DataHandler;
 import com.structit.apiclient.service.ApiService;
+import com.structit.apiclient.service.MainActivityReceiver;
 import com.structit.apiclient.service.MyBroadcastReceiver;
 import com.structit.apiclient.service.SensorService;
 import com.structit.apiclient.service.sensors.LocationSensorListener;
@@ -37,32 +38,29 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
-
+    public static final String  ACTION_PLAY = "ACTION_PLAY" , ACTION_STOP = "ACTION_STOP" , ACTION_PAUSE = "ACTION_PAUSE";
+    public static final String  ACTION_CURRENT_STATUS = "ACTION_CURRENT_STATUS";
     private DataHandler mDataHandler;
-    public MediaPlayer mMediaPlayer;
 
 
     private String mPlayListName;
     private static int mPlayListId = -1;
     private int lastPlayedID = 10;
-
     private Map<Integer, TextView> playIndicators = new HashMap<>();
 
-    //private SensorManager sensorManager;
-
-    //public Button mPlayButton = null;
-    public Button mStopButton = null;
-    public Intent musicIntent;
     private int playId;
+    private static MusicService.PlayerStates currentMPState ;
+    private MainActivityReceiver mainActivityReceiver;
+    private Button pauseButton;
+    private Button playButton;
+    public Button mStopButton = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         Log.i(LOG_TAG, "Creating...");
 
         setContentView(R.layout.activity_main);
-
         Intent intent = getIntent();
         String id = intent.getStringExtra("id");
         String url = intent.getStringExtra("url");
@@ -74,8 +72,9 @@ public class MainActivity extends AppCompatActivity {
         textviewApiUrl.setText(url);
 
         mDataHandler = new DataHandler(this);
-        mMediaPlayer = new MediaPlayer();
-        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+        playButton = (Button) findViewById(R.id.playButton);
+        pauseButton = (Button) findViewById(R.id.pauseButton);
 
         mPlayListName = intent.getStringExtra("playlist");
         mPlayListId = intent.getIntExtra("playlistid", -1);
@@ -84,29 +83,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         Log.i(LOG_TAG, "Starting...");
-
-
-        Intent locationService = new Intent(this, SensorService.class);
-        startService(locationService);
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(new MyBroadcastReceiver(this), new IntentFilter(SensorService.ACTION_LOCATION));
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(new MyBroadcastReceiver(this), new IntentFilter(SensorService.ACTION_LOCALISATION));
-        Log.i(LOG_TAG, "localBroadcastManager initialisés...");
-        //mis dans SensorService
-        /*sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
-        List<Sensor> allAccSensors = sensorManager.getSensorList(Sensor.TYPE_GYROSCOPE);
-
-        if(allAccSensors.size() > 0) {
-            Log.d(LOG_TAG, "onStart: Accelerometer found! (" + allAccSensors.size() + ")");
-        } else {
-            Log.d(LOG_TAG, "onStart: Accelerometer not found!");
-        }*/
-
-      //  sensorManager.registerListener(new LocationSensorListener(), allAccSensors.get(0), 1000000);
-
         super.onStart();
+
+       Intent musicIntent = new Intent(this, MusicService.class);
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(musicIntent);
+        } else {
+            startService(musicIntent);
+        }
 
         if(mPlayListId > -1) {
             mDataHandler.open();
@@ -143,29 +127,10 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(LOG_TAG, "onStart: ItemID: " + item.getId());
                     playItemLayout.setOnClickListener(listener);
 
-                    //musicIntent = new Intent(this, MusicService.class);
+                    playButton.setOnClickListener(listener);
+                    pauseButton.setOnClickListener(listener);
                 }
 
-                LinearLayout buttons = (LinearLayout) findViewById(R.id.id_control_buttons);
-               // mPlayButton= (Button) buttons.findViewById(R.id.id_play_button);
-                mStopButton = (Button) buttons.findViewById(R.id.id_stop_button);
-
-               /* mPlayButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        playId = lastPlayedID;
-                        musicIntent.putExtra("playId", playId);
-                        startService(musicIntent);
-                        //finish();
-                    }
-                });*/
-
-                mStopButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                       // stopService(musicIntent);
-                    }
-                });
             } // Else do nothing
         } else {
             Intent intent = new Intent(this, ApiService.class);
@@ -175,39 +140,18 @@ public class MainActivity extends AppCompatActivity {
                 startService(intent);
             }
         }
+
+        Intent locationService = new Intent(this, SensorService.class);
+        startService(locationService);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(new MyBroadcastReceiver(this), new IntentFilter(SensorService.ACTION_LOCATION));
+        LocalBroadcastManager.getInstance(this).registerReceiver(new MyBroadcastReceiver(this), new IntentFilter(SensorService.ACTION_LOCALISATION));
+        this.mainActivityReceiver = new MainActivityReceiver(this);
+        LocalBroadcastManager.getInstance(this).registerReceiver(this.mainActivityReceiver,new IntentFilter(MainActivity.ACTION_CURRENT_STATUS));
+        Log.i(LOG_TAG, "localBroadcastManager initialisés...");
+
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-       // Intent intent = new Intent(this, ApiService.class);
-       // stopService(intent);
-    }
-
-    public void play(int playId) {
-        this.mDataHandler.open();
-        String filename = this.mDataHandler.getPlayFile(playId);
-        this.mDataHandler.close();
-
-        if(filename.length() > 0) {
-            try {
-                File file = new File(getFilesDir(), filename);
-
-                this.mMediaPlayer.setDataSource(getApplicationContext(),
-                        Uri.fromFile(file));
-                this.mMediaPlayer.prepare();
-                this.mMediaPlayer.start();
-                playIndicators.get(playId).setText("Play");
-                this.playId = playId;
-                this.lastPlayedID = playId;
-            } catch (Exception ex) {
-                Log.e(LOG_TAG, "Unable to play sound");
-            }
-        } else {
-            Log.d(LOG_TAG, "No file found for play: " + playId);
-        }
-    }
 
     private int minInMap() {
         Set<Integer> allInts = playIndicators.keySet();
@@ -258,8 +202,21 @@ public class MainActivity extends AppCompatActivity {
         }
   }
 
+
+    public void play(int playId) {
+        playIndicators.get(playId).setText("Play");
+        Intent playIntent = new Intent(MusicService.ACTION_PLAY);
+        playIntent.putExtra("playId" ,playId );
+        LocalBroadcastManager.getInstance(this).sendBroadcast(playIntent);
+
+        Log.d(" PLAY =","Id envoyé");
+    }
     public void stop(int playId) {
-        if(this.mMediaPlayer.isPlaying()) {
+        Intent stopIntent = new Intent(MusicService.ACTION_STOP);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(stopIntent);
+        Log.d("STOP = ","Id envoyé");
+
+      /* if(this.mMediaPlayer.isPlaying()) {
             this.mMediaPlayer.stop();
             this.mMediaPlayer.reset();
 
@@ -267,6 +224,30 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if(playId != this.lastPlayedID)
+            this.play(playId);*/
+    }
+    public void pause(int playId) {
+
+        Intent pauseIntent = new Intent(MusicService.ACTION_PAUSE);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(pauseIntent);
+        Log.d("PAUSE = ","Id envoyé");
+        playIndicators.get(lastPlayedID).setText("Pause");
+        if(playId != this.lastPlayedID)
             this.play(playId);
+    }
+
+
+    public void updateMPState(MusicService.PlayerStates currentState) {
+        this.currentMPState = currentState;
+        Log.i("STATUT du MP" , "" +this.currentMPState );
+
+        if (this.currentMPState == MusicService.PlayerStates.PLAYING) {
+            pauseButton.setEnabled(true);
+            playButton.setEnabled(false);
+        }
+        if (this.currentMPState == MusicService.PlayerStates.PAUSED) {
+            pauseButton.setEnabled(false);
+            playButton.setEnabled(true);
+        }
     }
 }
