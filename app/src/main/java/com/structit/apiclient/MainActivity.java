@@ -73,8 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
         mDataHandler = new DataHandler(this);
 
-        playButton = (Button) findViewById(R.id.playButton);
-        pauseButton = (Button) findViewById(R.id.pauseButton);
+
 
         mPlayListName = intent.getStringExtra("playlist");
         mPlayListId = intent.getIntExtra("playlistid", -1);
@@ -127,6 +126,10 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(LOG_TAG, "onStart: ItemID: " + item.getId());
                     playItemLayout.setOnClickListener(listener);
 
+                    playButton = (Button) findViewById(R.id.playButton);
+                    pauseButton = (Button) findViewById(R.id.pauseButton);
+                    pauseButton.setClickable(true);
+                    playButton.setClickable(true);
                     playButton.setOnClickListener(listener);
                     pauseButton.setOnClickListener(listener);
                 }
@@ -242,12 +245,12 @@ public class MainActivity extends AppCompatActivity {
         Log.i("STATUT du MP" , "" +this.currentMPState );
 
         if (this.currentMPState == MusicService.PlayerStates.PLAYING) {
-            pauseButton.setEnabled(true);
-            playButton.setEnabled(false);
+            pauseButton.setClickable(true);
+            playButton.setClickable(false);
         }
         if (this.currentMPState == MusicService.PlayerStates.PAUSED) {
-            pauseButton.setEnabled(false);
-            playButton.setEnabled(true);
+            pauseButton.setClickable(false);
+            playButton.setClickable(true);
         }
     }
 }
